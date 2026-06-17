@@ -129,7 +129,8 @@ Registrar Kill
 RATNESS CLUB • SA31
 </footer>
 
-<script>
+<script type="module">
+  import { db } from './firebase-config.js';
 
 const RESPAWN_HORAS = 2;
 
@@ -259,7 +260,8 @@ setInterval(atualizarTela,1000);
 
 atualizarTela();
 
-</script>
+<script type="module">
+  import { db } from './firebase-config.js';
 
 </body>
 </html>
