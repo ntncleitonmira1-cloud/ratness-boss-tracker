@@ -3,55 +3,263 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RATNESS CLUB - SA31</title>
+<title>RATNESS CLUB - Boss Tracker SA31</title>
 
 <style>
-body{
-    background:#111;
-    color:white;
-    font-family:Arial;
-    text-align:center;
-    padding:30px;
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial, sans-serif;
 }
 
-h1{
-    color:#ff2b2b;
+body{
+background:#0b0b0b;
+color:#fff;
+padding:15px;
+}
+
+header{
+text-align:center;
+margin-bottom:20px;
+}
+
+header h1{
+color:#ff2b2b;
+font-size:32px;
+}
+
+header p{
+color:#4da6ff;
 }
 
 .card{
-    background:#1b1b1b;
-    padding:20px;
-    margin:15px auto;
-    border-radius:10px;
-    max-width:500px;
+background:#171717;
+border:1px solid #292929;
+border-radius:12px;
+padding:15px;
+margin-bottom:15px;
+}
+
+.boss{
+font-size:22px;
+font-weight:bold;
+color:#ff4d4d;
 }
 
 .timer{
-    font-size:28px;
-    color:#4da6ff;
+font-size:28px;
+margin:10px 0;
+color:#4da6ff;
+}
+
+.status{
+font-weight:bold;
+}
+
+.ready{
+color:#00ff88;
+}
+
+.dead{
+color:#ff4d4d;
+}
+
+button{
+width:100%;
+padding:12px;
+border:none;
+border-radius:8px;
+background:#ff2b2b;
+color:white;
+font-size:16px;
+cursor:pointer;
+margin-top:10px;
+}
+
+button:hover{
+opacity:.9;
+}
+
+select{
+width:100%;
+padding:12px;
+border-radius:8px;
+margin-top:10px;
+margin-bottom:10px;
+background:#222;
+color:white;
+border:1px solid #333;
+}
+
+footer{
+margin-top:20px;
+text-align:center;
+color:#888;
+font-size:13px;
 }
 </style>
 </head>
 
 <body>
 
+<header>
 <h1>RATNESS CLUB</h1>
-<h2>Boss Tracker SA31</h2>
+<p>Boss Tracker SA31</p>
+</header>
+
+<div id="bosses"></div>
 
 <div class="card">
-    <h3>Redmoon King</h3>
-    <div class="timer">EM DESENVOLVIMENTO</div>
+<h3>Registrar Kill</h3>
+
+<select id="bossSelect">
+<option value="Redmoon King">Redmoon King</option>
+<option value="Turkan">Turkan</option>
+<option value="Nefariox">Nefariox</option>
+<option value="Black Dragon">Black Dragon</option>
+</select>
+
+<button onclick="registrarKill()">
+Registrar Kill
+</button>
 </div>
 
-<div class="card">
-    <h3>Turkan</h3>
-    <div class="timer">EM DESENVOLVIMENTO</div>
-</div>
+<footer>
+RATNESS CLUB • SA31
+</footer>
 
+<script>
+
+const RESPAWN_HORAS = 2;
+
+const bosses = {
+"Redmoon King": null,
+"Turkan": null,
+"Nefariox": null,
+"Black Dragon": null
+};
+
+const notificacoes = {};
+
+if ("Notification" in window) {
+Notification.requestPermission();
+}
+
+function enviarNotificacao(nome){
+
+if(Notification.permission === "granted"){
+
+new Notification("⚠ Boss Prestes a Nascer",{
+body:`${nome} nasce em menos de 5 minutos`
+});
+
+}
+
+}
+
+function registrarKill(){
+
+const boss = document.getElementById("bossSelect").value;
+
+bosses[boss] = Date.now();
+
+notificacoes[boss] = false;
+
+localStorage.setItem("ratnessBosses",JSON.stringify(bosses));
+
+atualizarTela();
+
+}
+
+function formatar(segundos){
+
+let h = Math.floor(segundos/3600);
+let m = Math.floor((segundos%3600)/60);
+let s = segundos%60;
+
+return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+}
+
+function atualizarTela(){
+
+const container = document.getElementById("bosses");
+
+container.innerHTML="";
+
+Object.keys(bosses).forEach(nome=>{
+
+let html="";
+
+if(!bosses[nome]){
+
+html=`
 <div class="card">
-    <h3>Nefariox</h3>
-    <div class="timer">EM DESENVOLVIMENTO</div>
+<div class="boss">${nome}</div>
+<div class="status ready">🟢 Disponível</div>
 </div>
+`;
+
+}else{
+
+const nascimento =
+bosses[nome] + (RESPAWN_HORAS * 60 * 60 * 1000);
+
+const restante =
+Math.floor((nascimento - Date.now())/1000);
+
+if(restante <= 0){
+
+html=`
+<div class="card">
+<div class="boss">${nome}</div>
+<div class="status ready">🟢 Disponível</div>
+</div>
+`;
+
+}else{
+
+if(restante <= 300 && !notificacoes[nome]){
+
+enviarNotificacao(nome);
+
+notificacoes[nome] = true;
+
+}
+
+html=`
+<div class="card">
+<div class="boss">${nome}</div>
+<div class="timer">⏳ ${formatar(restante)}</div>
+<div class="status dead">🔴 Aguardando Respawn</div>
+</div>
+`;
+
+}
+
+}
+
+container.innerHTML += html;
+
+});
+
+}
+
+const salvo =
+localStorage.getItem("ratnessBosses");
+
+if(salvo){
+
+Object.assign(bosses, JSON.parse(salvo));
+
+}
+
+setInterval(atualizarTela,1000);
+
+atualizarTela();
+
+</script>
 
 </body>
 </html>
